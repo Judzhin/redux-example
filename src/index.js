@@ -1,11 +1,34 @@
 // import {createStore} from "./createStore";
-import {createStore, applyMiddleware, combineReducers} from 'redux';
+import {createStore, applyMiddleware, combineReducers, compose} from 'redux';
 import logger from 'redux-logger';
 import thunk from 'redux-thunk';
+import { composeWithDevTools } from 'redux-devtools-extension';
 import $ from "jquery"; // const $ = require( "jquery" );
 import './style.css';
-import {ASYNC_INCREMENT, CHANGE_THEME, DECREMENT, INCREMENT, INITIALIZE} from "./types";
-import {asyncIncrement, changeTheme, decrement, increment} from "./actions";
+import {ASYNC_INCREMENT, CHANGE_THEME, DECREMENT, INCREMENT, INITIALIZE, TOGGLE_DISABLE} from "./types";
+import {asyncIncrement, changeTheme, decrement, increment, toggleDisabled} from "./actions";
+
+const initialDisabledState = {
+    value: false
+};
+
+
+/**
+ *
+ * @param state
+ * @param action
+ * @returns {{value: boolean}}
+ */
+function disabledReducer(state = initialDisabledState, action) {
+    switch (action.type) {
+        case TOGGLE_DISABLE:
+            return {...state, value: action.payload}
+            break;
+        default:
+            return state;
+    }
+    return state;
+}
 
 /**
  *
@@ -116,32 +139,43 @@ function themeReducer(state = initialThemeState, action) {
 // }
 
 const rootReducer = combineReducers({
+    disabled: disabledReducer,
     counter: counterReducer,
     theme: themeReducer
 });
 
 // const store = createStore(rootReducer, 0);
-const store = createStore(rootReducer, applyMiddleware(thunk, logger));
+// const store = createStore(rootReducer, applyMiddleware(thunk, logger));
+const store = createStore(rootReducer,
+    // compose(
+    //     applyMiddleware(thunk, logger),
+    //     window.__REDUX_DEVTOOLS_EXTENSION__ && window.__REDUX_DEVTOOLS_EXTENSION__()
+    // )
+    composeWithDevTools(
+        applyMiddleware(thunk, logger)
+    )
+);
 window.store = store;
 
-$('#add').on('click', function () {
+const $add = $('#add').on('click', function () {
     // store.dispatch({type: INCREMENT});
     store.dispatch(increment());
 });
 
-$('#sub').on('click', function () {
+const $sub = $('#sub').on('click', function () {
     // store.dispatch({type: DECREMENT});
     store.dispatch(decrement());
 });
 
-$('#async').on('click', function () {
+const $async = $('#async').on('click', function () {
     // setTimeout(() => {
     //     store.dispatch(increment());
     // }, 2000);
-    store.dispatch(asyncIncrement())
+    // store.dispatch();
+    store.dispatch(asyncIncrement());
 });
 
-$('#theme').on('click', function () {
+const $theme = $('#theme').on('click', function () {
     const newTheme = $('body').hasClass('light') ? 'dark' : 'light';
     store.dispatch(changeTheme(newTheme))
 });
@@ -152,6 +186,11 @@ const $body = $('body');
 store.subscribe(() => {
     const state = store.getState();
     $('#counter').html(state.counter);
+
+    $.each([$add, $sub, $async, $theme], function (i, $bttn) {
+        $bttn.attr('disabled', state.disabled.value);
+    });
+
     $body.removeClass(['light', 'dark']);
     $body.addClass(state.theme.value);
 });

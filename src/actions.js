@@ -1,4 +1,32 @@
-import {ASYNC_INCREMENT, CHANGE_THEME, DECREMENT, INCREMENT} from "./types";
+import {ASYNC_INCREMENT, CHANGE_THEME, DECREMENT, INCREMENT, TOGGLE_DISABLE} from "./types";
+
+/**
+ *
+ * @param disabled
+ * @returns {{type: string, payload: *}}
+ */
+export function toggleDisabled(disabled) {
+    return {
+        type: TOGGLE_DISABLE,
+        payload: disabled
+    }
+}
+
+/**
+ *
+ * @returns {{type: string, payload: *}}
+ */
+function setDisabled () {
+    return toggleDisabled(true);
+}
+
+/**
+ *
+ * @returns {{type: string, payload: *}}
+ */
+function unsetDisabled () {
+    return toggleDisabled(false);
+}
 
 /**
  *
@@ -10,14 +38,18 @@ export function increment() {
 
 /**
  *
- * @returns {{type: string}}
+ * @returns {Function}
  */
 export function asyncIncrement() {
     // return {type: ASYNC_INCREMENT}
     return function (dispatch) {
         // dispatch({type: ASYNC_INCREMENT});
+        // dispatch(toggleDisabled(true));
+        dispatch(setDisabled());
         setTimeout(() => {
             // dispatch({type: ASYNC_INCREMENT});
+            // dispatch(toggleDisabled(false));
+            dispatch(unsetDisabled());
             dispatch(increment());
         }, 1500);
     }
